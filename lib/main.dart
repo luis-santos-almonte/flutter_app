@@ -1,25 +1,35 @@
-import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:english_words/english_words.dart';
 
 void main() {
   runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => MyAppState(),
-      child: MaterialApp(
-        title: 'Namer App',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        ),
-        home: MyHomePage(),
+      child: Consumer<MyAppState>(
+        builder: (context, appState, child) {
+          return MaterialApp(
+            title: 'Namer App',
+            theme: ThemeData(
+              useMaterial3: true,
+              colorScheme: appState.isDarkTheme
+                  ? ColorScheme.fromSeed(
+                      seedColor: Colors.blueAccent,
+                      brightness: Brightness.dark,
+                    )
+                  : ColorScheme.fromSeed(
+                      seedColor: Colors.deepPurple,
+                      brightness: Brightness.light,
+                    ),
+            ),
+            home: MyHomePage(),
+          );
+        },
       ),
     );
   }
@@ -27,13 +37,13 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
+  var favorites = <WordPair>[];
+  bool isDarkTheme = false;
 
   void getNext() {
     current = WordPair.random();
     notifyListeners();
   }
-
-  var favorites = <WordPair>[];
 
   void toggleFavorite() {
     if (favorites.contains(current)) {
@@ -41,6 +51,11 @@ class MyAppState extends ChangeNotifier {
     } else {
       favorites.add(current);
     }
+    notifyListeners();
+  }
+
+  void toggleTheme() {
+    isDarkTheme = !isDarkTheme;
     notifyListeners();
   }
 }
@@ -67,6 +82,8 @@ class _MyHomePageState extends State<MyHomePage> {
         throw UnimplementedError('no widget for $selectedIndex');
     }
 
+    var appState = context.watch<MyAppState>();
+
     return LayoutBuilder(builder: (context, constraints) {
       return Scaffold(
         body: Row(
@@ -83,12 +100,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     icon: Icon(Icons.favorite),
                     label: Text('Favorites'),
                   ),
+                  NavigationRailDestination(
+                    icon: Icon(appState.isDarkTheme ? Icons.dark_mode : Icons.light_mode),
+                    label: Text('Theme'),
+                  ),
                 ],
                 selectedIndex: selectedIndex,
                 onDestinationSelected: (value) {
-                  setState(() {
-                    selectedIndex = value;
-                  });
+                  if (value == 2) {
+                    appState.toggleTheme(); // Cambia el tema
+                  } else {
+                    setState(() {
+                      selectedIndex = value;
+                    });
+                  }
                 },
               ),
             ),
